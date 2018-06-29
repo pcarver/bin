@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+import sys
+from subprocess import check_output, CalledProcessError
+
+dir1, dir2 = sys.argv[1], sys.argv[2]
+
+numOnlyInA = 0
+numOnlyInB = 0
+numIdentical = 0
+numDiffer = 0
+numSomethingElse = 0
+
+try:
+    allfiles = check_output('diff -qrs %s %s' % (dir1, dir2), shell=True)
+except CalledProcessError as e:
+    allfiles = e.output
+
+allfiles = allfiles.decode('utf-8').splitlines()
+for file in allfiles:
+    if file[-14:] == ' are identical':
+        numIdentical += 1
+    elif file[:8] == 'Only in ':
+        if file[8:8+len(dir1)] == dir1:
+            numOnlyInA += 1
+        if file[8:8+len(dir2)] == dir2:
+            numOnlyInB += 1
+    elif file[-7:] == ' differ':
+        numDiffer +=1
+    else:
+        numSomethingElse += 1
+        print('Unrecognized output: ', file)
+
+if numIdentical > 0:
+    print('There were %d identical files' % numIdentical)
+
+if numOnlyInA > 0:
+    print('There were %d files only in %s' % (numOnlyInA, dir1))
+if numOnlyInB > 0:
+    print('There were %d files only in %s' % (numOnlyInB, dir2))
+
+if numDiffer > 0:
+    print('There were %d files with differences' % numDiffer)
+
+if numSomethingElse > 0:
+    print('Something unrecognized occured %d times', numSomethingElse)
